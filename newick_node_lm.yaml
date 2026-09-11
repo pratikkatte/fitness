@@ -1,0 +1,43 @@
+# Run: python newick_node_lm.py --config newick_node_lm.yaml
+# Quick check: python newick_node_lm.py --profile smoke --device cpu
+# Relative paths are resolved against this YAML file's directory.
+profile: full
+
+# Data and synthetic node features.
+seed: 42
+source_path: dataset/public-2023-12-25.all.nwk
+output_dir: artifacts/newick_node_lm
+min_nodes: 16
+max_nodes: 64
+n_shapes: 1024
+n_values: 8
+
+# Small causal Transformer. context_length must be >= max_nodes + 1.
+context_length: 65
+n_layers: 4
+d_model: 128
+n_heads: 4
+d_ff: 512
+dropout: 0.1
+
+# Training. auto selects CUDA if available, otherwise CPU.
+# CUDA uses bfloat16 when the device supports it.
+device: auto
+batch_size: 64
+learning_rate: 0.0003
+weight_decay: 0.01
+max_epochs: 30
+patience: 5
+grad_clip: 1.0
+generation_trials: 100
+
+# Profile overrides apply before any --device command-line override.
+# Smoke outputs go under output_dir/smoke/; extraction caches are shared.
+profiles:
+  full: {}
+  smoke:
+    n_shapes: 64
+    max_epochs: 2
+    patience: 2
+    batch_size: 16
+    generation_trials: 8

@@ -1,5 +1,58 @@
 # Next-node tree prediction
 
+## Newick node-language-model experiment
+
+Run **`newick_node_lm.py`** with settings in **`newick_node_lm.yaml`** for the
+experiment on `dataset/public-2023-12-25.all.nwk`. It extracts 1,024 distinct small subtree
+shapes, assigns synthetic parent–child numeric features, and trains a four-layer
+causal Transformer to predict the next `(value, child_count)` node in preorder.
+Child counts preserve topology; node names and IDs never enter the network.
+Train, validation, and test sets contain separate shape groups.
+
+Install the dependencies and run the full experiment:
+
+```sh
+python -m pip install -r requirements.txt
+python newick_node_lm.py --config newick_node_lm.yaml
+```
+
+The YAML contains the data paths, model dimensions, training settings, and
+smoke-profile overrides. Relative paths are resolved against the YAML file's
+directory. The default configuration uses CUDA with bfloat16 when supported,
+otherwise CPU float32. For a quick CPU execution check:
+
+```sh
+python newick_node_lm.py --profile smoke --device cpu
+```
+
+Use `--check-data` to extract and validate the configured data without training.
+`--profile` and `--device` override the YAML settings. The Python script runs
+independently of Jupyter and saves plots as PNGs. Importing it does not start a
+run. For prediction from a saved checkpoint:
+
+```python
+from newick_node_lm import Experiment, NodeRecord
+
+experiment = Experiment.from_checkpoint("artifacts/newick_node_lm/checkpoint.pt")
+prediction = experiment.predict_next([NodeRecord(value=3, child_count=2)])
+```
+
+Outputs are saved under `artifacts/newick_node_lm/`; smoke outputs use its
+`smoke/` subdirectory. Extraction caches are fingerprinted against the source.
+Rerunning a profile replaces its training outputs. Each run saves the resolved
+configuration as both YAML and JSON. The script reports joint
+likelihood, feature and child-count accuracies, subtree-return predictions,
+unigram/bigram comparisons, and constrained versus unconstrained generation.
+Synthetic feature learning does not establish biological forecasting ability.
+
+The original notebook, `newick_node_lm.ipynb`, remains available. Both versions
+have passed an end-to-end CPU smoke run: extraction, data and
+causality checks, one-tree overfitting, generation validity, and checkpoint
+reload. The two-epoch smoke run did not meet the learning criterion. Full A100
+training has not been run in this workspace.
+
+## Earlier synthetic-history experiment
+
 Open **`tree_next_node.ipynb`** for the complete experiment: generate synthetic tree histories, serialize them, train a tiny decoder, compare with baselines, and inspect predicted additions.
 
 ## Run
